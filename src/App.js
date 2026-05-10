@@ -5,22 +5,36 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+        if (currentUser) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+          setProfile(data);
+        }
+      } catch (err) {
+        console.error('Init error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    init();
   }, []);
 
   if (loading) return (
@@ -36,6 +50,11 @@ function App() {
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={user ? <Dashboard user={user} /> : <Navigate to="/login" />} />
+        <Route path="/admin" element={
+          !user ? <Navigate to="/login" /> :
+          profile?.role === 'admin' ? <Admin user={user} /> :
+          <Navigate to="/dashboard" />
+        } />
       </Routes>
     </Router>
   );
