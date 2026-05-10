@@ -11,7 +11,8 @@ function Admin({ user }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalMembers: 0, activeMembers: 0, totalRevenue: 0, classesCount: 0 });
   const [revenueChart, setRevenueChart] = useState([]);
-  const [upcomingBirthdays, setUpcomingBirthdays] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+const [upcomingBirthdays, setUpcomingBirthdays] = useState([]);
 
   const [newClass, setNewClass] = useState({ name: '', instructor: '', schedule: '', total_spots: 20, class_type: '', duration_minutes: 60, location: 'Main Hall' });
   const [newPayment, setNewPayment] = useState({ user_id: '', amount: '', payment_method: 'Vodafone Cash', notes: '', status: 'confirmed' });

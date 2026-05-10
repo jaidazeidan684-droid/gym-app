@@ -3,13 +3,13 @@ import { supabase } from '../lib/supabase';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 function Dashboard({ user }) {
-  const navigate_to = (path) => { window.location.href = path; };
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [profile, setProfile] = useState(null);
   const [classes, setClasses] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [inbodyResults, setInbodyResults] = useState([]);
-  const [attendance, setAttendance] = useState([]);
+  const [attendance, setAttendance] = useState([]); // eslint-disable-line no-unused-vars
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
 
