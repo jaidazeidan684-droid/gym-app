@@ -146,7 +146,10 @@ function Dashboard({ user }) {
         <div className="flex items-center gap-4">
           <p className="text-gray-400 text-sm">Welcome, {profile?.full_name || user.email}</p>
           <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full font-bold">{profile?.subscription_type || 'Pro'}</span>
-          <button onClick={handleLogout} className="border border-gray-600 text-gray-300 px-4 py-2 rounded hover:border-red-500 hover:text-red-400 transition text-sm">Logout</button>
+          <div className="flex items-center gap-3">
+  <a href="/admin" className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded font-bold text-sm transition">Admin Panel</a>
+  <button onClick={handleLogout} className="border border-gray-600 text-gray-300 px-4 py-2 rounded hover:border-red-500 hover:text-red-400 transition text-sm">Logout</button>
+</div>
         </div>
       </nav>
 
