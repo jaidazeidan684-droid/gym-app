@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 function Register() {
@@ -8,7 +8,6 @@ function Register() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -25,7 +24,7 @@ function Register() {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     }
   };
 

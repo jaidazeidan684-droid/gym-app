@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 function Login() {
@@ -7,7 +7,6 @@ function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,7 +19,7 @@ function Login() {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     }
   };
 
