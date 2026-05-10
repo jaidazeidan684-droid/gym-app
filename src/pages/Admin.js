@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function Admin({ user }) {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [members, setMembers] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -11,8 +10,9 @@ function Admin({ user }) {
   const [inbodyResults, setInbodyResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalMembers: 0, activeMembers: 0, totalRevenue: 0, classesCount: 0 });
+  const [revenueChart, setRevenueChart] = useState([]);
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState([]);
 
-  // Forms
   const [newClass, setNewClass] = useState({ name: '', instructor: '', schedule: '', total_spots: 20, class_type: '', duration_minutes: 60, location: 'Main Hall' });
   const [newPayment, setNewPayment] = useState({ user_id: '', amount: '', payment_method: 'Vodafone Cash', notes: '', status: 'confirmed' });
   const [newInbody, setNewInbody] = useState({ user_id: '', test_date: '', weight: '', muscle_mass: '', body_fat: '', bmi: '', notes: '' });
@@ -38,7 +38,7 @@ function Admin({ user }) {
     const { data: inbodyData } = await supabase.from('inbody_results').select('*, profiles(full_name)').order('test_date', { ascending: false });
     setInbodyResults(inbodyData || []);
 
-    const totalRevenue = (paymentsData || []).filter(p => p.status === 'confirmed').reduce((sum, p) => sum + p.amount, 0);
+    const totalRevenue = (paymentsData || []).filter(p => p.status === 'confirmed').reduce((sum, p) => sum + (p.amount || 0), 0);
     const activeMembers = (membersData || []).filter(m => m.subscription_end && new Date(m.subscription_end) > new Date()).length;
 
     setStats({
@@ -47,6 +47,16 @@ function Admin({ user }) {
       totalRevenue,
       classesCount: (classesData || []).length
     });
+
+    // Build monthly revenue chart
+    const monthlyRevenue = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    ;(paymentsData || []).filter(p => p.status === 'confirmed').forEach(p => {
+      const month = months[new Date(p.payment_date).getMonth()];
+      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (p.amount || 0);
+    });
+    const chartData = months.filter(m => monthlyRevenue[m]).map(m => ({ month: m, Revenue: monthlyRevenue[m] }));
+    setRevenueChart(chartData);
 
     setLoading(false);
   };
@@ -100,11 +110,6 @@ function Admin({ user }) {
     alert('Member updated!');
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
-
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'members', label: 'Members' },
@@ -134,8 +139,8 @@ function Admin({ user }) {
           <span className="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded font-bold">ADMIN</span>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className={btnGray}>Member View</button>
-          <button onClick={handleLogout} className="border border-gray-600 text-gray-300 px-4 py-2 rounded hover:border-red-500 hover:text-red-400 transition text-sm">Logout</button>
+          <button onClick={() => window.location.href = '/dashboard'} className={btnGray}>Member View</button>
+          <button onClick={() => { supabase.auth.signOut(); window.location.href = '/'; }} className="border border-gray-600 text-gray-300 px-4 py-2 rounded hover:border-red-500 hover:text-red-400 transition text-sm">Logout</button>
         </div>
       </nav>
 
@@ -168,6 +173,22 @@ function Admin({ user }) {
                 </div>
               ))}
             </div>
+
+            {/* Revenue Chart */}
+            {revenueChart.length > 0 && (
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="font-bold text-lg mb-6 text-yellow-400">Monthly Revenue (EGP)</h3>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={revenueChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="month" stroke="#9CA3AF" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="#9CA3AF" tick={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px', color: '#F9FAFB' }} formatter={(value) => [`${value} EGP`, 'Revenue']} />
+                    <Bar dataKey="Revenue" fill="#E53E3E" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Recent Payments */}
             <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
@@ -232,7 +253,6 @@ function Admin({ user }) {
           <div className="flex flex-col gap-6">
             <h2 className="text-2xl font-black">Members Management</h2>
 
-            {/* Edit Member Modal */}
             {editMember && (
               <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
                 <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-md border border-gray-700">
@@ -262,7 +282,7 @@ function Admin({ user }) {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-gray-400 border-b border-gray-700 bg-gray-750">
+                    <tr className="text-gray-400 border-b border-gray-700">
                       <th className="text-left py-3 px-4">Name</th>
                       <th className="text-left py-3 px-4">Phone</th>
                       <th className="text-left py-3 px-4">Plan</th>
@@ -307,8 +327,6 @@ function Admin({ user }) {
         {activeTab === 'classes' && (
           <div className="flex flex-col gap-6">
             <h2 className="text-2xl font-black">Classes Management</h2>
-
-            {/* Add Class Form */}
             <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
               <h3 className="font-bold text-lg mb-4 text-red-400">Add New Class</h3>
               <form onSubmit={addClass} className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -322,8 +340,6 @@ function Admin({ user }) {
                 <div className="flex items-end"><button type="submit" className={`${btnRed} w-full`}>Add Class</button></div>
               </form>
             </div>
-
-            {/* Classes List */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -365,8 +381,6 @@ function Admin({ user }) {
         {activeTab === 'payments' && (
           <div className="flex flex-col gap-6">
             <h2 className="text-2xl font-black">Payments</h2>
-
-            {/* Add Payment Form */}
             <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
               <h3 className="font-bold text-lg mb-4 text-red-400">Record New Payment</h3>
               <form onSubmit={addPayment} className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -398,8 +412,6 @@ function Admin({ user }) {
                 <div className="flex items-end"><button type="submit" className={`${btnRed} w-full`}>Record Payment</button></div>
               </form>
             </div>
-
-            {/* Payments List */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -437,7 +449,6 @@ function Admin({ user }) {
         {activeTab === 'inbody' && (
           <div className="flex flex-col gap-6">
             <h2 className="text-2xl font-black">InBody Results Input</h2>
-
             <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
               <h3 className="font-bold text-lg mb-4 text-red-400">Add InBody Result for Member</h3>
               <form onSubmit={addInbody} className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -457,8 +468,6 @@ function Admin({ user }) {
                 <div className="flex items-end"><button type="submit" className={`${btnRed} w-full`}>Add Result</button></div>
               </form>
             </div>
-
-            {/* InBody History */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
               <div className="p-4 border-b border-gray-700">
                 <h3 className="font-bold">All InBody Results</h3>
